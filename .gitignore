@@ -11,3 +11,8 @@ __pycache__/
 # Project specific
 venv/
 *.log
+
+# Egg-info stuff
+*.egg-info/
+dist/
+build/

@@ -1,3 +1,4 @@
+import argparse
 import json
 import shlex
 import urllib.parse
@@ -184,3 +185,19 @@ def get_records(url, username, password, tenant, hrid):
         if items is not None:
             item_ids.extend(items)
     return item_ids
+
+
+def main():
+    """Main entry point for the script."""
+    # Create an argument parser
+    parser = argparse.ArgumentParser(description='Get records from FOLIO using curl.')
+    # Add arguments for FOLIO URL, username, password, tenant ID and hrid
+    parser.add_argument('url', help='FOLIO URL')
+    parser.add_argument('username', help='FOLIO username')
+    parser.add_argument('password', help='FOLIO password')
+    parser.add_argument('tenant', help='FOLIO tenant ID')
+    parser.add_argument('hrid', help='Human-readable ID of the record to fetch')
+    # Parse the arguments
+    args = parser.parse_args()
+    # Call the get_records function with the arguments
+    get_records(args.url, args.username, args.password, args.tenant, args.hrid)
