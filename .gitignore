@@ -1,0 +1,13 @@
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Text editor specific
+*~
+.*.swp
+.DS_Store
+
+# Project specific
+venv/
+*.log
