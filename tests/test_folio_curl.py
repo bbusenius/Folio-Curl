@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from folio_curl import auth, get_holdings, get_instances, get_items, get_records
+from folio_curl import auth, get_holdings, get_instances, get_items, get_records, main
 
 
 class TestAuth(unittest.TestCase):
@@ -373,6 +373,48 @@ class TestGetRecords(unittest.TestCase):
             # verify that print statements are correctly suppressed
             expected_calls = [unittest.mock.call(''), unittest.mock.call('')]
             mock_print.assert_has_calls(expected_calls)
+
+
+class TestMain(unittest.TestCase):
+    @patch('folio_curl.get_records')
+    @patch('folio_curl.argparse.ArgumentParser')
+    def test_main(self, mock_parser_class, mock_get_records):
+        # Arrange
+        # Create a mock parser object and a mock namespace object
+        mock_parser = mock_parser_class.return_value
+        mock_namespace = mock_parser.parse_args.return_value
+        # Set the attributes of the mock namespace object to some sample values
+        mock_namespace.url = "https://folio.example.com"
+        mock_namespace.username = "admin"
+        mock_namespace.password = "secret"
+        mock_namespace.tenant = "diku"
+        mock_namespace.hrid = "1234567890"
+        # Act
+        main()
+        # Assert
+        # Verify that the mock parser object was created with the correct description
+        mock_parser_class.assert_called_once_with(
+            description='Get records from FOLIO using curl.'
+        )
+        # Verify that the mock parser object added the correct arguments
+        calls = [
+            unittest.mock.call('url', help='FOLIO URL'),
+            unittest.mock.call('username', help='FOLIO username'),
+            unittest.mock.call('password', help='FOLIO password'),
+            unittest.mock.call('tenant', help='FOLIO tenant ID'),
+            unittest.mock.call('hrid', help='Human-readable ID of the record to fetch'),
+        ]
+        mock_parser.add_argument.assert_has_calls(calls)
+        # Verify that the mock parser object parsed the arguments
+        mock_parser.parse_args.assert_called_once()
+        # Verify that the get_records function was called with the correct arguments
+        mock_get_records.assert_called_once_with(
+            mock_namespace.url,
+            mock_namespace.username,
+            mock_namespace.password,
+            mock_namespace.tenant,
+            mock_namespace.hrid,
+        )
 
 
 if __name__ == "__main__":
