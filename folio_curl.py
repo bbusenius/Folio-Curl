@@ -172,11 +172,11 @@ def get_items(token, url, holding_id, tenant):
 
 
 def get_records(url, username, password, tenant, hrid):
-    """Gets a list of item IDs for a given HRID.
-    Authenticates the user and gets the token. Gets the instance ID for
-    the given HRID. Gets a list of holding IDs for the given instance ID.
-    Gets a list of item IDs for each holding ID. Returns a list of lists of item IDs
-    where each list of item IDs is grouped by the holding it belongs to.
+    """Gets a list of lists of item IDs for a given HRID.
+    Authenticates the user and gets the token. Gets the instance IDs for
+    the given HRID. Gets a list of holding IDs for each instance ID.
+    Gets a list of item IDs for each holding ID. Returns a list of lists of item IDs,
+    where each list corresponds to a different holding ID.
 
     Args:
         url (str): The base URL of the API.
@@ -186,26 +186,26 @@ def get_records(url, username, password, tenant, hrid):
         hrid (str): The HRID of the instance.
 
     Returns:
-        list[list[str]]: A list of lists of item IDs grouped by the holding they belong to,
-                         or an empty list if no records were found.
+        list[list[str]]: A list of lists of item IDs, or an empty list if no records were found.
     """
     token = auth(url, username, password, tenant)
-    print('')
-    instance_id = get_instances(token, url, hrid, tenant)
-    print('')
-    if instance_id is None:
+    print('')  # Added print statement after auth
+    instance_ids = get_instances(token, url, hrid, tenant)
+    print('')  # Added print statement after get_instances
+    if not instance_ids:
         return []
-    holding_ids = get_holdings(token, url, instance_id, tenant)
-    print('')
-    if holding_ids is None:
-        return []
-    item_ids_by_holding = []
-    for holding_id in holding_ids:
-        items = get_items(token, url, holding_id, tenant)
-        print('')
-        if items is not None:
-            item_ids_by_holding.append(items)
-    return item_ids_by_holding
+    item_ids = []
+    for instance_id in instance_ids:
+        holding_ids = get_holdings(token, url, instance_id, tenant)
+        print('')  # Added print statement after get_holdings
+        if holding_ids:
+            for holding_id in holding_ids:
+                items = get_items(token, url, holding_id, tenant)
+                print('')  # Added print statement after get_items
+                if items is not None:
+                    # Changed from extend to append to create a list of lists
+                    item_ids.append(items)
+    return item_ids
 
 
 def main():

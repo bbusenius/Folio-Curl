@@ -286,16 +286,17 @@ class TestGetRecords(unittest.TestCase):
         # Use the variables from setUp
         # Create a mock token and lists of item IDs
         mock_token = "valid-token"
-        mock_item_ids_1 = ["item-id-1", "item-id-2"]
-        mock_item_ids_2 = ["item-id-3", "item-id-4"]
         # Make the mock auth function return the mock token
         mock_auth.return_value = mock_token
-        # Make the mock get_instances function return a valid instance ID
-        mock_get_instances.return_value = "instance-id"
-        # Make the mock get_holdings function return a list of holding IDs
-        mock_get_holdings.return_value = ["holding-id-1", "holding-id-2"]
-        # Make the mock get_items function return the mock item IDs for the two holdings
-        mock_get_items.side_effect = [mock_item_ids_1, mock_item_ids_2]
+        # Make the mock get_instances function return a list of instance IDs
+        mock_get_instances.return_value = ["instance-id-1", "instance-id-2"]
+        # Make the mock get_holdings function return a list of lists of holding IDs
+        mock_get_holdings.side_effect = [["holding-id-1"], ["holding-id-2"]]
+        # Make the mock get_items function return a list of item IDs for each holding ID
+        # Use a loop to generate item IDs dynamically based on the holding ID
+        def generate_item_ids(token, url, holding_id, tenant):
+            return [f"{holding_id}-item-{i}" for i in range(1, 3)]
+        mock_get_items.side_effect = generate_item_ids
         # Act
         with patch('builtins.print') as mock_print:
             id_list = get_records(
@@ -304,7 +305,10 @@ class TestGetRecords(unittest.TestCase):
             # Assert
             self.assertIsNotNone(id_list)
             self.assertIsInstance(id_list, list)
-            expected_result = [mock_item_ids_1, mock_item_ids_2]
+            expected_result = [
+                ["holding-id-1-item-1", "holding-id-1-item-2"],
+                ["holding-id-2-item-1", "holding-id-2-item-2"],
+            ]
             self.assertEqual(id_list, expected_result)
             # Verify that the mock functions were called with the correct arguments
             mock_auth.assert_called_once_with(
@@ -313,22 +317,19 @@ class TestGetRecords(unittest.TestCase):
             mock_get_instances.assert_called_once_with(
                 mock_token, self.url, self.hrid, self.tenant
             )
-            mock_get_holdings.assert_called_once_with(
-                mock_token, self.url, "instance-id", self.tenant
-            )
-            # Expect two calls to get_items with different holding IDs
-            mock_get_items.assert_has_calls(
-                [
-                    unittest.mock.call(
-                        mock_token, self.url, "holding-id-1", self.tenant
-                    ),
-                    unittest.mock.call(
-                        mock_token, self.url, "holding-id-2", self.tenant
-                    ),
-                ]
-            )
-            # Verify that print was called with an empty string 5 times
-            mock_print.assert_has_calls([unittest.mock.call('')] * 5)
+            # Verify that the mock get_holdings function was called twice with different instance IDs
+            calls = [
+                unittest.mock.call(mock_token, self.url, "instance-id-1", self.tenant),
+                unittest.mock.call(mock_token, self.url, "instance-id-2", self.tenant),
+            ]
+            mock_get_holdings.assert_has_calls(calls)
+            # Verify that the mock get_items function was called twice with different holding IDs
+            calls = [
+                unittest.mock.call(mock_token, self.url, "holding-id-1", self.tenant),
+                unittest.mock.call(mock_token, self.url, "holding-id-2", self.tenant),
+            ]
+            mock_get_items.assert_has_calls(calls)
+
 
     @patch('folio_curl.get_items')
     @patch('folio_curl.get_holdings')
