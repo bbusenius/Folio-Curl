@@ -8,7 +8,6 @@ import requests
 
 def auth(url, username, password, tenant):
     """Authenticates a user and returns a token.
-
     Sends a POST request to the given URL with the given username, password, and tenant.
     Extracts the token from the response headers and returns it.
 
@@ -39,7 +38,6 @@ def auth(url, username, password, tenant):
 
 def get_instances(token, url, hrid, tenant):
     """Gets the instance ID for a given HRID.
-
     Sends a GET request to the given URL with the given token, hrid, and tenant.
     Parses the response body as JSON and returns the ID of the first instance.
 
@@ -62,7 +60,14 @@ def get_instances(token, url, hrid, tenant):
     response = requests.get(
         f'{url}/instance-storage/instances', headers=headers, params=params
     )
-    response_json = response.json()
+    try:
+        response_json = response.json()
+    except json.decoder.JSONDecodeError:
+        print(
+            "Error: Failed to parse response as JSON. You probably don't have access to okapi."
+        )
+        return None
+
     # Check if the instances list is not empty
     if response_json['instances']:
         id = response_json['instances'][0]['id']
@@ -80,7 +85,6 @@ def get_instances(token, url, hrid, tenant):
 
 def get_holdings(token, url, instance_id, tenant):
     """Gets a list of holding IDs for a given instance ID.
-
     Sends a GET request to the given URL with the given token, instance_id, and tenant.
     Parses the response body as JSON and returns a list of holding IDs.
 
@@ -100,10 +104,17 @@ def get_holdings(token, url, instance_id, tenant):
         'X-Okapi-Token': token,
     }
     params = {'query': f'(instanceId=="{instance_id}" NOT discoverySuppress==true)'}
-    response = requests.get(
-        f'{url}/holdings-storage/holdings', headers=headers, params=params
-    )
-    response_json = response.json()
+    try:
+        response = requests.get(
+            f'{url}/holdings-storage/holdings', headers=headers, params=params
+        )
+        response_json = response.json()
+    except json.JSONDecodeError:
+        print(
+            "Error: Failed to parse response as JSON. You probably don't have access to okapi."
+        )
+        return None
+
     id_list = [holding['id'] for holding in response_json['holdingsRecords']]
 
     # Print the curl command for debugging
@@ -117,7 +128,6 @@ def get_holdings(token, url, instance_id, tenant):
 
 def get_items(token, url, holding_id, tenant):
     """Gets a list of item IDs for a given holding ID.
-
     Sends a GET request to the given URL with the given token, holding_id, and tenant.
     Parses the response body as JSON and returns a list of item IDs.
 
@@ -128,7 +138,7 @@ def get_items(token, url, holding_id, tenant):
         tenant (str): The tenant of the user.
 
     Returns:
-        list[str]: A list of item IDs, or None if no items were found.
+        list[str]: A list of item IDs, or an empty list if no items were found.
     """
     headers = {
         'Accept': 'application/json',
@@ -147,9 +157,15 @@ def get_items(token, url, holding_id, tenant):
     print(curl_string)
 
     # Send the request and parse the response
-    response = requests.get(f'{url}/item-storage/items', headers=headers, params=params)
-    response_json = response.json()
-    id_list = [item['id'] for item in response_json['items']]
+    try:
+        response = requests.get(
+            f'{url}/item-storage/items', headers=headers, params=params
+        )
+        response_json = response.json()
+        id_list = [item['id'] for item in response_json['items']]
+    except json.JSONDecodeError:
+        print("Error: Response body could not be parsed as JSON")
+        id_list = []
 
     # Return the id_list
     return id_list
@@ -157,7 +173,6 @@ def get_items(token, url, holding_id, tenant):
 
 def get_records(url, username, password, tenant, hrid):
     """Gets a list of item IDs for a given HRID.
-
     Authenticates the user and gets the token. Gets the instance ID for
     the given HRID. Gets a list of holding IDs for the given instance ID.
     Gets a list of item IDs for each holding ID. Returns a list of item IDs.
