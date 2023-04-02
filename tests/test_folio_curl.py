@@ -294,8 +294,10 @@ class TestGetRecords(unittest.TestCase):
         mock_get_holdings.side_effect = [["holding-id-1"], ["holding-id-2"]]
         # Make the mock get_items function return a list of item IDs for each holding ID
         # Use a loop to generate item IDs dynamically based on the holding ID
+
         def generate_item_ids(token, url, holding_id, tenant):
             return [f"{holding_id}-item-{i}" for i in range(1, 3)]
+
         mock_get_items.side_effect = generate_item_ids
         # Act
         with patch('builtins.print') as mock_print:
@@ -330,6 +332,14 @@ class TestGetRecords(unittest.TestCase):
             ]
             mock_get_items.assert_has_calls(calls)
 
+            # Verify that the print function was called four times with empty strings
+            calls = [
+                unittest.mock.call(''),
+                unittest.mock.call(''),
+                unittest.mock.call(''),
+                unittest.mock.call(''),
+            ]
+            mock_print.assert_has_calls(calls)
 
     @patch('folio_curl.get_items')
     @patch('folio_curl.get_holdings')
