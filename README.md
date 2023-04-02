@@ -42,7 +42,8 @@ tenant = "my-tenant"
 hrid = "my-instance-hrid"
 
 token = folio_curl.auth(url, username, password, tenant)
-instance_id = folio_curl.get_instances(token, url, hrid, tenant)
+instance_ids = folio_curl.get_instances(token, url, hrid, tenant)
+instance_id = instance_ids[0]  # Assuming there is only one instance with the given HRID
 holdings = folio_curl.get_holdings(token, url, instance_id, tenant)
 
 print(holdings)

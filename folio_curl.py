@@ -37,9 +37,9 @@ def auth(url, username, password, tenant):
 
 
 def get_instances(token, url, hrid, tenant):
-    """Gets the instance ID for a given HRID.
+    """Gets the instance ID(s) for a given HRID.
     Sends a GET request to the given URL with the given token, hrid, and tenant.
-    Parses the response body as JSON and returns the ID of the first instance.
+    Parses the response body as JSON and returns the ID(s) of the instances.
 
     Args:
         token (str): The token of the user.
@@ -48,7 +48,7 @@ def get_instances(token, url, hrid, tenant):
         tenant (str): The tenant of the user.
 
     Returns:
-        str: The ID of the instance, or None if no instance was found.
+        list[str]: The IDs of the instances, or an empty list if no instances were found.
     """
     headers = {
         'Accept': 'application/json',
@@ -66,13 +66,13 @@ def get_instances(token, url, hrid, tenant):
         print(
             "Error: Failed to parse response as JSON. You probably don't have access to okapi."
         )
-        return None
+        return []
 
     # Check if the instances list is not empty
     if response_json['instances']:
-        id = response_json['instances'][0]['id']
+        ids = [instance['id'] for instance in response_json['instances']]
     else:
-        id = None
+        ids = []
 
     # Print the curl command for debugging
     # URL-encode the query parameter
@@ -80,7 +80,7 @@ def get_instances(token, url, hrid, tenant):
     curl_string = f"curl -w '\\n' -H {shlex.quote('Accept: application/json')} -H {shlex.quote('Content-Type: application/json')} -H {shlex.quote(f'X-Okapi-Tenant: {tenant}')} -H {shlex.quote(f'X-Okapi-Token: {token}')} {shlex.quote(url + '/instance-storage/instances')}?{shlex.quote(query)}"
     print(curl_string)
 
-    return id
+    return ids
 
 
 def get_holdings(token, url, instance_id, tenant):
@@ -175,7 +175,8 @@ def get_records(url, username, password, tenant, hrid):
     """Gets a list of item IDs for a given HRID.
     Authenticates the user and gets the token. Gets the instance ID for
     the given HRID. Gets a list of holding IDs for the given instance ID.
-    Gets a list of item IDs for each holding ID. Returns a list of item IDs.
+    Gets a list of item IDs for each holding ID. Returns a list of lists of item IDs
+    where each list of item IDs is grouped by the holding it belongs to.
 
     Args:
         url (str): The base URL of the API.
@@ -185,21 +186,26 @@ def get_records(url, username, password, tenant, hrid):
         hrid (str): The HRID of the instance.
 
     Returns:
-        list[str]: A list of item IDs, or an empty list if no records were found.
+        list[list[str]]: A list of lists of item IDs grouped by the holding they belong to,
+                         or an empty list if no records were found.
     """
     token = auth(url, username, password, tenant)
+    print('')
     instance_id = get_instances(token, url, hrid, tenant)
+    print('')
     if instance_id is None:
         return []
     holding_ids = get_holdings(token, url, instance_id, tenant)
+    print('')
     if holding_ids is None:
         return []
-    item_ids = []
+    item_ids_by_holding = []
     for holding_id in holding_ids:
         items = get_items(token, url, holding_id, tenant)
+        print('')
         if items is not None:
-            item_ids.extend(items)
-    return item_ids
+            item_ids_by_holding.append(items)
+    return item_ids_by_holding
 
 
 def main():

@@ -78,15 +78,17 @@ class TestGetInstances(unittest.TestCase):
         # Use the variables from setUp
         # Create a mock response object with a valid instance ID
         mock_response = unittest.mock.Mock()
-        mock_response.json.return_value = {'instances': [{'id': 'instance-id'}]}
+        mock_response.json.return_value = {
+            'instances': [{'id': 'instance-id-1'}, {'id': 'instance-id-2'}]
+        }
         # Make the mock get function return the mock response object
         mock_get.return_value = mock_response
         # Act
-        id = get_instances(self.token, self.url, self.hrid, self.tenant)
+        ids = get_instances(self.token, self.url, self.hrid, self.tenant)
         # Assert
-        self.assertIsNotNone(id)
-        self.assertIsInstance(id, str)
-        self.assertEqual(id, 'instance-id')
+        self.assertIsNotNone(ids)
+        self.assertIsInstance(ids, list)
+        self.assertEqual(ids, ['instance-id-1', 'instance-id-2'])
         # Verify that the mock get function was called with the correct arguments
         mock_get.assert_called_once_with(
             f'{self.url}/instance-storage/instances',
@@ -110,9 +112,9 @@ class TestGetInstances(unittest.TestCase):
         # Make the mock get function return the mock response object
         mock_get.return_value = mock_response
         # Act
-        id = get_instances(self.token, self.url, invalid_hrid, self.tenant)
+        ids = get_instances(self.token, self.url, invalid_hrid, self.tenant)
         # Assert
-        self.assertIsNone(id)
+        self.assertEqual(ids, [])
         # Verify that the mock get function was called with the correct arguments
         mock_get.assert_called_once_with(
             f'{self.url}/instance-storage/instances',
@@ -295,30 +297,38 @@ class TestGetRecords(unittest.TestCase):
         # Make the mock get_items function return the mock item IDs for the two holdings
         mock_get_items.side_effect = [mock_item_ids_1, mock_item_ids_2]
         # Act
-        id_list = get_records(
-            self.url, self.username, self.password, self.tenant, self.hrid
-        )
-        # Assert
-        self.assertIsNotNone(id_list)
-        self.assertIsInstance(id_list, list)
-        self.assertEqual(id_list, mock_item_ids_1 + mock_item_ids_2)
-        # Verify that the mock functions were called with the correct arguments
-        mock_auth.assert_called_once_with(
-            self.url, self.username, self.password, self.tenant
-        )
-        mock_get_instances.assert_called_once_with(
-            mock_token, self.url, self.hrid, self.tenant
-        )
-        mock_get_holdings.assert_called_once_with(
-            mock_token, self.url, "instance-id", self.tenant
-        )
-        # Expect two calls to get_items with different holding IDs
-        mock_get_items.assert_has_calls(
-            [
-                unittest.mock.call(mock_token, self.url, "holding-id-1", self.tenant),
-                unittest.mock.call(mock_token, self.url, "holding-id-2", self.tenant),
-            ]
-        )
+        with patch('builtins.print') as mock_print:
+            id_list = get_records(
+                self.url, self.username, self.password, self.tenant, self.hrid
+            )
+            # Assert
+            self.assertIsNotNone(id_list)
+            self.assertIsInstance(id_list, list)
+            expected_result = [mock_item_ids_1, mock_item_ids_2]
+            self.assertEqual(id_list, expected_result)
+            # Verify that the mock functions were called with the correct arguments
+            mock_auth.assert_called_once_with(
+                self.url, self.username, self.password, self.tenant
+            )
+            mock_get_instances.assert_called_once_with(
+                mock_token, self.url, self.hrid, self.tenant
+            )
+            mock_get_holdings.assert_called_once_with(
+                mock_token, self.url, "instance-id", self.tenant
+            )
+            # Expect two calls to get_items with different holding IDs
+            mock_get_items.assert_has_calls(
+                [
+                    unittest.mock.call(
+                        mock_token, self.url, "holding-id-1", self.tenant
+                    ),
+                    unittest.mock.call(
+                        mock_token, self.url, "holding-id-2", self.tenant
+                    ),
+                ]
+            )
+            # Verify that print was called with an empty string 5 times
+            mock_print.assert_has_calls([unittest.mock.call('')] * 5)
 
     @patch('folio_curl.get_items')
     @patch('folio_curl.get_holdings')
@@ -334,20 +344,24 @@ class TestGetRecords(unittest.TestCase):
         mock_get_instances.return_value = None  # invalid hrid returns None
         mock_get_holdings.return_value = ["holding-id-1", "holding-id-2"]
         mock_get_items.side_effect = [mock_item_ids_1, mock_item_ids_2]
-        id_list = get_records(
-            self.url, self.username, self.password, self.tenant, "invalid-hrid"
-        )
-        # id_list should be an empty list for invalid hrid
-        self.assertEqual(id_list, [])
-        mock_auth.assert_called_once_with(
-            self.url, self.username, self.password, self.tenant
-        )
-        mock_get_instances.assert_called_once_with(
-            mock_token, self.url, "invalid-hrid", self.tenant
-        )
-        # the following mocks should not be called for invalid hrid
-        mock_get_holdings.assert_not_called()
-        mock_get_items.assert_not_called()
+        with patch('builtins.print') as mock_print:
+            id_list = get_records(
+                self.url, self.username, self.password, self.tenant, "invalid-hrid"
+            )
+            # id_list should be an empty list for invalid hrid
+            self.assertEqual(id_list, [])
+            mock_auth.assert_called_once_with(
+                self.url, self.username, self.password, self.tenant
+            )
+            mock_get_instances.assert_called_once_with(
+                mock_token, self.url, "invalid-hrid", self.tenant
+            )
+            # the following mocks should not be called for invalid hrid
+            mock_get_holdings.assert_not_called()
+            mock_get_items.assert_not_called()
+            # verify that print statements are correctly suppressed
+            expected_calls = [unittest.mock.call(''), unittest.mock.call('')]
+            mock_print.assert_has_calls(expected_calls)
 
 
 if __name__ == "__main__":
