@@ -77,8 +77,8 @@ def get_instances(token, url, hrid, tenant):
     # Print the curl command for debugging
     # URL-encode the query parameter
     query = urllib.parse.quote_plus(params['query'])
-    curl_string = f"curl -w '\\n' -H {shlex.quote('Accept: application/json')} -H {shlex.quote('Content-Type: application/json')} -H {shlex.quote(f'X-Okapi-Tenant: {tenant}')} -H {shlex.quote(f'X-Okapi-Token: {token}')} {shlex.quote(url + '/instance-storage/instances')}?{shlex.quote(query)}"
-    print(curl_string)
+    curl_string = f"curl -w '\\n' -H {shlex.quote('Accept: application/json')} -H {shlex.quote('Content-Type: application/json')} -H {shlex.quote(f'X-Okapi-Tenant: {tenant}')} -H {shlex.quote(f'X-Okapi-Token: {token}')} {shlex.quote(url + '/instance-storage/instances')}"
+    print(curl_string + f'?query={query}')
 
     return ids
 
@@ -120,7 +120,7 @@ def get_holdings(token, url, instance_id, tenant):
     # Print the curl command for debugging
     # URL-encode the query parameter
     query = urllib.parse.quote_plus(params['query'])
-    curl_string = f"curl -w '\\n' -H {shlex.quote('Accept: application/json')} -H {shlex.quote('Content-Type: application/json')} -H {shlex.quote(f'X-Okapi-Tenant: {tenant}')} -H {shlex.quote(f'X-Okapi-Token: {token}')} {shlex.quote(url + '/holdings-storage/holdings')}?{shlex.quote(query)}"
+    curl_string = f"curl -w '\\n' -H {shlex.quote('Accept: application/json')} -H {shlex.quote('Content-Type: application/json')} -H {shlex.quote(f'X-Okapi-Tenant: {tenant}')} -H {shlex.quote(f'X-Okapi-Token: {token}')} {shlex.quote(url + '/holdings-storage/holdings')}?query={shlex.quote(query)}"
     print(curl_string)
 
     return id_list
@@ -153,7 +153,7 @@ def get_items(token, url, holding_id, tenant):
     # Print the curl command for debugging
     # URL-encode the query parameter
     query = urllib.parse.quote_plus(params['query'])
-    curl_string = f"curl -w '\\n' -H {shlex.quote('Accept: application/json')} -H {shlex.quote('Content-Type: application/json')} -H {shlex.quote(f'X-Okapi-Tenant: {tenant}')} -H {shlex.quote(f'X-Okapi-Token: {token}')} {shlex.quote(url + '/item-storage/items')}?{shlex.quote(query)}"
+    curl_string = f"curl -w '\\n' -H {shlex.quote('Accept: application/json')} -H {shlex.quote('Content-Type: application/json')} -H {shlex.quote(f'X-Okapi-Tenant: {tenant}')} -H {shlex.quote(f'X-Okapi-Token: {token}')} {shlex.quote(url + '/item-storage/items?query=' + query)}"
     print(curl_string)
 
     # Send the request and parse the response
