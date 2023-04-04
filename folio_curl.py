@@ -36,7 +36,6 @@ def auth(url, username, password, tenant):
     return token
 
 
-
 def get_instances(token, url, hrid, tenant):
     """Gets the instance ID(s) for a given HRID.
     Sends a GET request to the given URL with the given token, hrid, and tenant.
