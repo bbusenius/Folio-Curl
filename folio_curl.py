@@ -20,17 +20,18 @@ def auth(url, username, password, tenant):
     Returns:
         str: The token of the user, or None if authentication failed.
     """
+    endpoint = '/authn/login-with-expiry'
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'X-Okapi-Tenant': tenant,
     }
     data = {'username': username, 'password': password}
-    response = requests.post(f'{url}/authn/login', headers=headers, json=data)
-    token = response.headers.get('x-okapi-token')
+    response = requests.post(f'{url}{endpoint}', headers=headers, json=data)
+    token = response.cookies.get('folioAccessToken')
 
     # Print the curl command for debugging
-    curl_string = f"curl -w '\\n' -X POST -H {shlex.quote('Accept: application/json')} -H {shlex.quote('Content-Type: application/json')} -H {shlex.quote(f'X-Okapi-Tenant: {tenant}')} '{url}/authn/login' -d {shlex.quote(json.dumps(data))} --include"
+    curl_string = f"curl -w '\\n' -X POST -H {shlex.quote('Accept: application/json')} -H {shlex.quote('Content-Type: application/json')} -H {shlex.quote(f'X-Okapi-Tenant: {tenant}')} '{url}{endpoint}' -d {shlex.quote(json.dumps(data))} --include"
     print(curl_string)
 
     return token
